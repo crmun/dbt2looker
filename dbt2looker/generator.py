@@ -196,11 +196,9 @@ def normalise_spark_types(column_type: str) -> str:
 
 
 def map_adapter_type_to_looker(adapter_type: models.SupportedDbtAdapters, column_type: str):
-    if column_type is None:
-        return None
     normalised_column_type = (normalise_spark_types(column_type) if adapter_type == models.SupportedDbtAdapters.spark.value else column_type).upper()
     looker_type = LOOKER_DTYPE_MAP[adapter_type].get(normalised_column_type)
-    if looker_type is None:
+    if (column_type is not None) and (looker_type is None):
         logging.warning(f'Column type {column_type} not supported for conversion from {adapter_type} to looker. No dimension will be created.')
     return looker_type
 
@@ -243,18 +241,22 @@ def lookml_dimension_groups_from_model(model: models.DbtModel, adapter_type: mod
 
 
 def lookml_dimensions_from_model(model: models.DbtModel, adapter_type: models.SupportedDbtAdapters):
+
     return [
         {
             'name': column.meta.dimension.name or column.name,
             'type': map_adapter_type_to_looker(adapter_type, column.data_type),
             'sql': column.meta.dimension.sql or f'${{TABLE}}.{column.name}',
+            'view_label': column.meta.dimension.description or column.description,
             'description': column.meta.dimension.description or column.description,
+            **({'hidden': column.meta.dimension.hidden.value} if column.meta.dimension.hidden and column.meta.dimension.hidden.value else {}),
             **(
                 {'value_format_name': column.meta.dimension.value_format_name.value}
                 if (column.meta.dimension.value_format_name
                     and map_adapter_type_to_looker(adapter_type, column.data_type) == 'number')
                 else {}
             )
+            
         }
         for column in model.columns.values()
         if column.meta.dimension.enabled

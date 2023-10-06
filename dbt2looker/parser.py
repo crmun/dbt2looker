@@ -40,6 +40,7 @@ def parse_models(raw_manifest: dict, tag=None) -> List[models.DbtModel]:
     # Empty model files have many missing parameters
     for model in all_models:
         if not hasattr(model, 'name'):
+            logging.error('model:', str(model))
             logging.error('Cannot parse model with id: "%s" - is the model file empty?', model.unique_id)
             raise SystemExit('Failed')
 

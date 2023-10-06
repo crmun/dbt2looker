@@ -104,6 +104,8 @@ class Dbt2LookerDimension(BaseModel):
     sql: Optional[str]
     description: Optional[str]
     value_format_name: Optional[LookerValueFormatName]
+    hidden: Optional[LookerHiddenType]
+    primary_key: Optional[LookerHiddenType]
 
 
 class Dbt2LookerMeta(BaseModel):
@@ -187,6 +189,7 @@ class DbtManifestMetadata(BaseModel):
         try:
             SupportedDbtAdapters(v)
         except ValueError:
+            logging.debug('UnsupportedDbtAdapterError', v)
             raise UnsupportedDbtAdapterError(wrong_value=v)
         return v
 
