@@ -172,6 +172,7 @@ class DbtModel(DbtNode):
     columns: Dict[str, DbtModelColumn]
     tags: List[str]
     meta: DbtModelMeta
+    group_label: Optional[str]
 
     @validator('columns')
     def case_insensitive_column_names(cls, v: Dict[str, DbtModelColumn]):

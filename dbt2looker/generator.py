@@ -212,6 +212,7 @@ def lookml_date_time_dimension_group(column: models.DbtModelColumn, adapter_type
         'type': 'time',
         'sql': column.meta.dimension.sql or f'${{TABLE}}.{column.name}',
         'description': column.meta.dimension.description or column.description,
+        'view_label': column.meta.dimension.description or column.description,
         'datatype': map_adapter_type_to_looker(adapter_type, column.data_type),
         'timeframes': ['raw', 'time', 'hour', 'date', 'week', 'month', 'quarter', 'year']
     }
@@ -223,6 +224,7 @@ def lookml_date_dimension_group(column: models.DbtModelColumn, adapter_type: mod
         'type': 'time',
         'sql': column.meta.dimension.sql or f'${{TABLE}}.{column.name}',
         'description': column.meta.dimension.description or column.description,
+        'view_label': column.meta.dimension.description or column.description,
         'datatype': map_adapter_type_to_looker(adapter_type, column.data_type),
         'timeframes': ['raw', 'date', 'week', 'month', 'quarter', 'year']
     }
@@ -250,8 +252,8 @@ def lookml_dimensions_from_model(model: models.DbtModel, adapter_type: models.Su
             'name': column.meta.dimension.name or column.name,
             'type': map_adapter_type_to_looker(adapter_type, column.data_type),
             'sql': column.meta.dimension.sql or f'${{TABLE}}.{column.name}',
-            'view_label': column.meta.dimension.description or column.description,
             'description': column.meta.dimension.description or column.description,
+            'view_label': column.meta.dimension.description or column.description,
             **({'hidden': column.meta.dimension.hidden.value} if column.meta.dimension.hidden and column.meta.dimension.hidden.value else {}),
             **(
                 {'value_format_name': column.meta.dimension.value_format_name.value}
@@ -339,15 +341,22 @@ def lookml_view_from_dbt_model(model: models.DbtModel, adapter_type: models.Supp
 def lookml_model_from_dbt_model(model: models.DbtModel, connection_name: str):
     # Note: assumes view names = model names
     #       and models are unique across dbt packages in project
+    logging.debug(str(model))
     lookml = {
         'connection': connection_name,
         'include': '/views/*',
         'explore': {
             'name': model.name,
+            'from': model.name,
+            'group_label': model.group_label or 'Student Success Accelerator',
             'description': model.description,
+            'view_label': model.name.replace("_"," ").title(),
+            'case_sensitive': 'no',
             'joins': [
                 {
                     'name': join.join,
+                    'from': join.join,
+                    'view_label': join.join.replace("_"," ").title(),
                     'type': join.type.value,
                     'relationship': join.relationship.value,
                     'sql_on': join.sql_on,
